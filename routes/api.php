@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\InstitutionController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\WebhookController;
 use App\Http\Controllers\Api\AnalyticsController; // تأكد من وجودها
+use App\Http\Controllers\Api\NotificationController;
 
 
 /*
@@ -116,4 +117,11 @@ Route::prefix('v1')->group(function () {
         });
 
     });
+    
+});
+// داخل مجموعة auth:sanctum
+Route::prefix('notifications')->group(function () {
+    Route::get('/', [NotificationController::class, 'index']);
+    Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
 });

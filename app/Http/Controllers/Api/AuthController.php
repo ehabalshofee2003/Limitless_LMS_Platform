@@ -1,5 +1,22 @@
 <?php
-
+/**
+ * Register a new user
+ *
+ * This endpoint allows you to register a new user as a student or institution.
+ *
+ * @group Auth
+ * @bodyParam name string required The name of the user. Example: Ahmed
+ * @bodyParam email string required The email address. Example: ahmed@test.com
+ * @bodyParam password string required The password. Example: password123
+ * @bodyParam password_confirmation string required Must match password. Example: password123
+ * @bodyParam role string The role (student or institution). Example: student
+ *
+ * @response 201 {
+ *   "message": "User registered successfully.",
+ *   "access_token": "1|xyz...",
+ *   "token_type": "Bearer"
+ * }
+ */
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;

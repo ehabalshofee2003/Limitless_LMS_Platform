@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Cohort;
 use App\Services\CertificateService;
 use Illuminate\Http\Request;
+use App\Notifications\CertificateIssuedNotification;
 
 class CertificateController extends Controller
 {
@@ -46,4 +47,5 @@ class CertificateController extends Controller
 
         return $this->certificateService->generatePdf($user, $cohort);
     }
+ 
 }
