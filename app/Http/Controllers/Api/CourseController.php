@@ -8,37 +8,38 @@ use Illuminate\Http\Request;
 use App\Models\Course;
 use App\Http\Requests\StoreCourseRequest;
 use App\Http\Requests\UpdateCourseRequest;
+use Illuminate\Support\Facades\Cache; // <--- 1. استدعاء Cache
 
 class CourseController extends Controller
 {
     protected $courseService;
-public function show($id){
-    $course = Course::findOrFail($id);
 
-    return response()->json([
-        'status' => 'success',
-        'data' => $course
-    ]);}
-public function __construct(CourseService $courseService)
+    public function show($id)
     {
-        $this->courseService = $courseService;
+        // 3. تخزين تفاصيل دورة واحدة
+        // لاحظ استخدام المفتاح الديناميكي 'course.' . $id
+        $course = Cache::remember("course.{$id}", 3600, function () use ($id) {
+            return Course::with('institution', 'cohorts')->find($id);
+        });
+
+        if (!$course || $course->status !== 'published') {
+            return response()->json(['message' => 'Course not found'], 404);
+        }
+
+        return response()->json($course);
     }
+    
 
-    // عرض الدورات (عام)
-public function index()
+  public function index()
     {
-        // نستخدم Repository مباشرة للقراءة البسيطة أو عبر Service
-        // هنا سنستخدم Service للتبسيط، أو يمكن حقن Repository في Controller للقراءة
-        // لكن للحفاظ على البساطة سنستخدم Service
-        // ملاحظة: يمكن إنشاء دالة index في Service إذا كانت تحتاج فلترة معقدة
-        
-        $courses = Course::where('status', 'published')->get(); 
-        // أو يمكن نقل هذا السطر لدالة في CourseRepository وحقنها هنا.
-        // للتبسيط الآن: قراءة البيانات البسيطة يمكن عملها مباشرة أو عبر دالة في Service.
-        
-        // الطريقة الاحترافية الكاملة:
-        // $courses = $this->courseService->getAllPublished(); 
-        
+        // 2. تخزين قائمة الدورات لمدة ساعة (60 * 60 ثانية)
+        $courses = Cache::remember('courses.published', 3600, function () {
+            return Course::where('status', 'published')
+                ->with('institution') // جلب علاقة المؤسسة
+                ->latest()
+                ->get();
+        });
+
         return response()->json($courses);
     }
 

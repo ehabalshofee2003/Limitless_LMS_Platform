@@ -9,47 +9,29 @@ use App\Models\Payment;
 use App\Models\Cohort;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache; // <--- 1. استدعاء Cache
+
 
 class AnalyticsController extends Controller
 {
     /**
      * اللوحة الرئيسية للمشرف
      */
-    public function dashboard()
+ public function dashboard()
     {
-        // 1. الإحصائيات المالية
-        $totalRevenue = Payment::where('status', 'completed')->sum('amount');
-        $monthlyRevenue = Payment::where('status', 'completed')
-            ->whereMonth('created_at', now()->month)
-            ->sum('amount');
+        // تخزين الإحصائيات لمدة 10 دقائق (600 ثانية)
+        $stats = Cache::remember('admin.dashboard.stats', 600, function () {
+            return [
+                'total_students' => User::role('student')->count(),
+                'total_instructors' => User::role('institution')->count(),
+                'total_courses' => Course::count(),
+                'total_revenue' => Payment::where('status', 'completed')->sum('amount'),
+            ];
+        });
 
-        // 2. إحصائيات المستخدمين
-        $totalStudents = User::role('student')->count();
-        $totalInstructors = User::role('instructor')->count();
-        $newUsersThisMonth = User::whereMonth('created_at', now()->month)->count();
-
-        // 3. إحصائيات المحتوى
-        $totalCourses = Course::count();
-        $activeCohorts = Cohort::where('end_date', '>', now())->count();
-        $pendingCourses = Course::where('status', 'pending')->count();
-
-        return response()->json([
-            'kpis' => [
-                'total_revenue' => $totalRevenue,
-                'monthly_revenue' => $monthlyRevenue,
-                'total_students' => $totalStudents,
-                'total_instructors' => $totalInstructors,
-            ],
-            'growth' => [
-                'new_users_monthly' => $newUsersThisMonth,
-            ],
-            'content' => [
-                'total_courses' => $totalCourses,
-                'active_cohorts' => $activeCohorts,
-                'pending_approvals' => $pendingCourses,
-            ]
-        ]);
+        return response()->json($stats);
     }
+
 
     /**
      * تحليل الإيرادات (للرسوم البيانية)
