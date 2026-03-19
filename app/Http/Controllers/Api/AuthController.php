@@ -19,14 +19,15 @@ class AuthController extends Controller
     /**
      * تسجيل مستخدم جديد
      */
+ 
     public function register(Request $request)
     {
-        // 1. التحقق من البيانات المدخلة
+        // 1. التحقق من البيانات (Validation)
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'confirmed', PasswordRule::defaults()], 
-            'role' => ['sometimes', 'string', 'in:student,institution'], // الدور: إما طالب أو مؤسسة
+            'password' => ['required', 'confirmed', PasswordRule::defaults()],
+            'role' => ['sometimes', 'string', 'in:student,institution'], // التحقق من الدور
         ]);
 
         // 2. إنشاء المستخدم
@@ -36,28 +37,24 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        // 3. تعيين الدور للمستخدم (افتراضياً طالب إذا لم يتم تحديده)
+        // 3. تعيين الدور (Role)
+        // إذا لم يتم إرسال دور، نعينه كطالب افتراضياً
         $role = $request->role ?? 'student';
         $user->assignRole($role);
 
-        // 4. إذا كان الدور "مؤسسة"، نقوم بإنشاء سجل مؤسسة فارغ ليملؤه لاحقاً
-        if ($role === 'institution') {
-            $user->institution()->create([
-                'name' => $user->name . ' Institution',
-                'slug' => Str::slug($user->name),
-                'is_verified' => false, // يحتاج موافقة المشرف
-            ]);
-        }
+        // 4. إرسال إيميل الترحيب باستخدام الطوابير (Queues)
+        // هذا السطر لا يوقف الكود، بل يرسل المهمة للخلفية
+        SendWelcomeEmailJob::dispatch($user);
 
-        // 5. إنشاء التوكن (Token) للوصول للـ API
+        // 5. إنشاء توكن الدخول (Token)
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        // هنا التغيير: نستخدم UserResource لتنسيق الرد
+        // 6. إرجاع الرد
         return response()->json([
-            'message' => 'User registered successfully',
+            'message' => 'User registered successfully.',
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user' => new UserResource($user), // <--- هنا تم التعديل
+            'user' => new UserResource($user),
         ], 201);
     }
 

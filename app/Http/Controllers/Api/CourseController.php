@@ -7,6 +7,7 @@ use App\Services\CourseService;
 use Illuminate\Http\Request;
 use App\Models\Course;
 use App\Http\Requests\StoreCourseRequest;
+use App\Http\Resources\CourseResource;
 use App\Http\Requests\UpdateCourseRequest;
 use Illuminate\Support\Facades\Cache; // <--- 1. استدعاء Cache
 
@@ -30,18 +31,29 @@ class CourseController extends Controller
     }
     
 
-  public function index()
-    {
-        // 2. تخزين قائمة الدورات لمدة ساعة (60 * 60 ثانية)
-        $courses = Cache::remember('courses.published', 3600, function () {
-            return Course::where('status', 'published')
-                ->with('institution') // جلب علاقة المؤسسة
-                ->latest()
-                ->get();
-        });
+ public function index(Request $request)
+{
+    // 1. نبدأ الاستعلام مع الـ Caching
+    // ملاحظة: مع الفلترة الديناميكية، الـ Cache يصبح معقداً قليلاً.
+    // الحل الاحترافي هو استخدام "Cache Key" فريد لكل组合 من الفلاتر.
+    
+    $cacheKey = 'courses.' . md5(json_encode($request->all()));
 
-        return response()->json($courses);
-    }
+    $courses = Cache::remember($cacheKey, 60, function () use ($request) {
+        
+        // 2. تطبيق الفلترة
+        // نمرر كل الباراميترات القادمة من الـ Request ($request->all())
+        return Course::query()
+            ->where('status', 'published') // نجلب المنشورة فقط للجمهور
+            ->filter($request->all())      // استدعاء الـ Scope الذي كتبناه
+            ->with('institution')          // جلب اسم المؤسسة
+            ->paginate(10);                // التقسيم (10 دورات في الصفحة)
+    });
+
+    // 3. إرجاع النتيجة
+    // استخدام API Resource لتنسيق الرد
+    return CourseResource::collection($courses);
+}
 
     // إنشاء دورة
 public function store(StoreCourseRequest $request)
