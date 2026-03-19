@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str; // <--- هذا هو السطر المطلوب
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Validation\Rules\Password as PasswordRule;
+use App\Jobs\SendWelcomeEmailJob;
 
 class AuthController extends Controller
 {
