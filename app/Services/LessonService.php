@@ -103,4 +103,22 @@ class LessonService
         
         return ['success' => true, 'data' => $lessons];
     }
+    // داخل كلاس LessonService
+
+    public function uploadResource($file)
+    {
+        // 1. التحقق من نوع الملف (اختياري لكن مستحسن)
+        $allowedMimes = ['video/mp4', 'application/pdf', 'video/quicktime'];
+        
+        // 2. تخزين الملف في مجلد 'lessons' داخل القرص 'public'
+        // المسار سيكون: storage/app/public/lessons/...
+        $path = $file->store('lessons', 'public');
+
+        // 3. إرجاع المسار ليتم حفظه في قاعدة البيانات
+        return [
+            'path' => $path,
+            'url' => asset('storage/' . $path), // الرابط الكامل للوصول للملف
+            'type' => $file->getMimeType() // لتحديد نوع الدرس تلقائياً
+        ];
+    }
 }

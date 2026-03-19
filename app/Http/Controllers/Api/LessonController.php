@@ -68,4 +68,22 @@ class LessonController extends Controller
         
         return response()->json($result['data']);
     }
+        public function uploadResource(Request $request)
+    {
+        // 1. التحقق من وجود ملف
+        $request->validate([
+            'file' => 'required|file|max:102400', // حد أقصى 100MB (تأكد من إعدادات PHP)
+        ]);
+
+        $file = $request->file('file');
+
+        // 2. استدعاء الخدمة
+        $data = $this->lessonService->uploadResource($file);
+
+        // 3. الرد
+        return response()->json([
+            'message' => 'File uploaded successfully.',
+            'data' => $data
+        ], 201);
+    }
 }

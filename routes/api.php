@@ -105,6 +105,8 @@ Route::prefix('v1')->group(function () {
             
             // إدارة الاختبارات
             Route::post('quizzes', [QuizController::class, 'store']); // أضفناها للتبسيط
+            // داخل مجموعة role:institution
+            Route::post('lessons/upload', [LessonController::class, 'uploadResource']); 
         });
 
         // --- مسارات المشرف (Admin) ---
