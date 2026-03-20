@@ -1,0 +1,42 @@
+version: '3.8'
+services:
+  # 1. خدمة التطبيق (مشروعك)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: limitless-lms
+    container_name: limitless-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    ports:
+      - "8000:80" # ربط منفذ الجهاز 8000 بمنفذ الحاوية 80
+    networks:
+      - limitless-network
+
+  # 2. خدمة قاعدة البيانات (MySQL)
+  db:
+    image: mysql:8.0
+    container_name: limitless-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: limitless
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_PASSWORD: root
+      MYSQL_USER: limitless_user
+    volumes:
+      - dbdata:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - limitless-network
+
+networks:
+  limitless-network:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local

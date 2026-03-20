@@ -3,26 +3,25 @@
 namespace App\Services;
 
 use App\Repositories\ReviewRepository;
-use App\Repositories\EnrollmentRepository; // للتحقق من التسجيل
 
 class ReviewService
 {
     protected $reviewRepo;
-    protected $enrollmentRepo;
 
-    public function __construct(ReviewRepository $reviewRepo, EnrollmentRepository $enrollmentRepo)
+    // أزلنا EnrollmentRepository من هنا
+    public function __construct(ReviewRepository $reviewRepo)
     {
         $this->reviewRepo = $reviewRepo;
-        $this->enrollmentRepo = $enrollmentRepo;
     }
 
     public function createReview($user, $courseId, array $data)
     {
         // 1. التحقق: هل المستخدم مسجل في الدورة؟
-        // (يمكنك إضافة شرط: هل أكمل الدورة؟ سنكتفي بالتسجيل الآن)
-        
-        // نحتاج للتحقق من وجود تسجيل في أي دفعة تابعة لهذه الدورة
-        $isEnrolled = $user->cohorts()->whereHas('course', fn($q) => $q->where('id', $courseId))->exists();
+        // نستخدم العلاقة الموجودة في مودل User مباشرة (cohorts)
+        // ونبحث داخل دفعاته عن دفعة تتبع لهذه الدورة
+        $isEnrolled = $user->cohorts()
+                           ->whereHas('course', fn($q) => $q->where('id', $courseId))
+                           ->exists();
 
         if (!$isEnrolled) {
             return ['error' => 'You must be enrolled in the course to review it.', 'code' => 403];
