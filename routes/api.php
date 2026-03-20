@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\WebhookController;
 use App\Http\Controllers\Api\AnalyticsController; // تأكد من وجودها
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\ReviewController;
 
 
 /*
@@ -42,6 +43,8 @@ Route::prefix('v1')->group(function () {
     // الدورات (قراءة فقط للجميع)
     Route::get('courses', [CourseController::class, 'index']);
     Route::get('courses/{course}', [CourseController::class, 'show']);
+    Route::get('courses/{course}/reviews', [ReviewController::class, 'index']);
+
 
     // Webhooks (للبوابك البنكية)
     Route::post('webhooks/stripe', [WebhookController::class, 'handleStripe']);
@@ -85,6 +88,8 @@ Route::prefix('v1')->group(function () {
             // المدفوعات
             Route::post('payments/checkout', [PaymentController::class, 'checkout']);
             Route::get('payments/history', [PaymentController::class, 'history']);
+            Route::post('courses/{course}/reviews', [ReviewController::class, 'store']);
+
         });
 
         // --- مسارات المدرب/المؤسسة (Instructor) ---

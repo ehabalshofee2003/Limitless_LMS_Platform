@@ -17,6 +17,8 @@ class CourseResource extends JsonResource
             'status' => $this->status,
             'institution' => $this->whenLoaded('institution')->name ?? 'N/A',
             'created_at' => $this->created_at->diffForHumans(),
+            'average_rating' => round($this->reviews()->avg('rating'), 1), // مثال: 4.5
+            'reviews_count' => $this->reviews()->count(),
         ];
     }
 }
