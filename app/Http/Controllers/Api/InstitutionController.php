@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Institution;
+use App\Models\Payout;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\StoreInstitutionRequest;
@@ -81,4 +82,30 @@ class InstitutionController extends Controller
         // منطق الرفض (مثلاً إرسال إشعار أو حذف)
         return response()->json(['message' => 'Institution rejected.']);
     }   
+        public function requestPayout(Request $request)
+    {
+        $request->validate(['amount' => 'required|numeric|min:10']);
+        
+        $user = $request->user();
+        $wallet = $user->wallet;
+
+        // التحقق من الرصيد المتاح (وليس المعلق)
+        if ($wallet->balance < $request->amount) {
+            return response()->json(['message' => 'Insufficient available balance.'], 400);
+        }
+
+        $payout = Payout::create([
+            'user_id' => $user->id,
+            'amount' => $request->amount,
+            'status' => 'pending',
+            'payment_method' => 'bank_transfer',
+            'details' => 'Account details...' // تؤخذ من الفورم
+        ]);
+
+        // تجميد المبلغ فوراً
+        $wallet->balance -= $request->amount;
+        $wallet->save();
+
+        return response()->json(['message' => 'Payout request submitted.', 'data' => $payout]);
+    }
 }

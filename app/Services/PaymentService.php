@@ -80,28 +80,24 @@ class PaymentService
 
     /**
      * معالجة نجاح الدفع (من Webhook)
-     */
+    */
     public function handleSuccess($paymentId, $stripeTransactionId)
     {
         $payment = $this->paymentRepo->find($paymentId);
-
-        if (!$payment || $payment->status === 'completed') {
-            return false; // تمت معالجته سابقاً أو غير موجود
-        }
+        $user = User::find($payment->user_id);
+        $cohort = $this->cohortRepo->find($payment->cohort_id);
+        $course = $cohort->course;
+        $instructor = $course->institution->user;
 
         // 1. تحديث حالة الدفع
-        $this->paymentRepo->update($payment, [
-            'status' => 'completed',
-            'transaction_id' => $stripeTransactionId
-        ]);
+        $this->paymentRepo->update($payment, ['status' => 'completed']);
 
-        // 2. تسجيل الطالب في الدفعة (استخدام CohortRepository)
-        $cohort = $this->cohortRepo->find($payment->cohort_id);
-        $user = User::find($payment->user_id);
+        // 2. تسجيل الطالب
+        $this->cohortRepo->enrollUser($cohort, $user);
 
-        if ($cohort && $user) {
-            $this->cohortRepo->enrollUser($cohort, $user);
-        }
+        // 3. التعامل المالي (الجديد)
+        $walletService = new WalletService();
+        $walletService->purchaseCourse($user, $instructor, $course, 20); // 20% عمولة
 
         return true;
     }

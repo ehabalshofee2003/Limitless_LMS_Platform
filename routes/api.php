@@ -15,6 +15,8 @@ use App\Http\Controllers\Api\WebhookController;
 use App\Http\Controllers\Api\AnalyticsController; // تأكد من وجودها
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\CodeRunnerController;
+use App\Http\Controllers\Api\WalletController;
 
 
 /*
@@ -45,7 +47,12 @@ Route::prefix('v1')->group(function () {
     Route::get('courses/{course}', [CourseController::class, 'show']);
     Route::get('courses/{course}/reviews', [ReviewController::class, 'index']);
 
-
+    // مسارات المحفظة (للجميع للاطلاع على الرصيد والمعاملات)
+    Route::prefix('wallet')->group(function () {
+        Route::get('/balance', [WalletController::class, 'balance']);
+        Route::get('/transactions', [WalletController::class, 'transactions']);
+    });
+  
     // Webhooks (للبوابك البنكية)
     Route::post('webhooks/stripe', [WebhookController::class, 'handleStripe']);
 
@@ -89,6 +96,7 @@ Route::prefix('v1')->group(function () {
             Route::post('payments/checkout', [PaymentController::class, 'checkout']);
             Route::get('payments/history', [PaymentController::class, 'history']);
             Route::post('courses/{course}/reviews', [ReviewController::class, 'store']);
+            Route::post('/run-code', [CodeRunnerController::class, 'run']);
 
         });
 
@@ -112,7 +120,10 @@ Route::prefix('v1')->group(function () {
             // إدارة الاختبارات
             Route::post('quizzes', [QuizController::class, 'store']); // أضفناها للتبسيط
             // داخل مجموعة role:institution
-            Route::post('lessons/upload', [LessonController::class, 'uploadResource']); 
+            Route::post('lessons/upload', [LessonController::class, 'uploadResource']);
+            Route::post('/wallet/payout', [WalletController::class, 'requestPayout']);
+            Route::get('/wallet/payouts', [WalletController::class, 'payoutHistory']);
+ 
         });
 
         // --- مسارات المشرف (Admin) ---

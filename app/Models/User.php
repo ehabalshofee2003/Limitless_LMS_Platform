@@ -69,4 +69,18 @@ public function sendPasswordResetNotification($token)
 
     $this->notify(new ResetPasswordNotification($url));
 }
+    public function wallet()
+    {
+        return $this->hasOne(Wallet::class);
+    }
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
+    public function payouts()
+    {
+        return $this->hasMany(Payout::class);
+    }
 }
