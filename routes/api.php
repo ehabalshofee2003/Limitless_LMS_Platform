@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\CodeRunnerController;
 use App\Http\Controllers\Api\WalletController;
+use App\Http\Controllers\Api\CommentController;
 
 
 /*
@@ -52,6 +53,13 @@ Route::prefix('v1')->group(function () {
         Route::get('/balance', [WalletController::class, 'balance']);
         Route::get('/transactions', [WalletController::class, 'transactions']);
     });
+    // routes/api.php
+
+// مسارات عامة للقراءة
+Route::get('lessons/{id}/comments', [CommentController::class, 'indexByLesson']);
+Route::get('courses/{id}/comments', [CommentController::class, 'indexByCourse']);
+
+ 
   
     // Webhooks (للبوابك البنكية)
     Route::post('webhooks/stripe', [WebhookController::class, 'handleStripe']);
@@ -97,6 +105,8 @@ Route::prefix('v1')->group(function () {
             Route::get('payments/history', [PaymentController::class, 'history']);
             Route::post('courses/{course}/reviews', [ReviewController::class, 'store']);
             Route::post('/run-code', [CodeRunnerController::class, 'run']);
+            Route::post('comments', [CommentController::class, 'store']);
+
 
         });
 
@@ -123,6 +133,8 @@ Route::prefix('v1')->group(function () {
             Route::post('lessons/upload', [LessonController::class, 'uploadResource']);
             Route::post('/wallet/payout', [WalletController::class, 'requestPayout']);
             Route::get('/wallet/payouts', [WalletController::class, 'payoutHistory']);
+            Route::post('comments', [CommentController::class, 'store']);
+
  
         });
 
