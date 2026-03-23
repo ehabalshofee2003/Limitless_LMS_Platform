@@ -54,11 +54,11 @@ Base URL: /api/v1Auth Method: Bearer Token (Sanctum)
 
 |Method	| Endpoint	| Description	| Auth
 | :--- | :--- | :--- | :--- |
-|POST	| /auth/register	| تسجيل مستخدم جديد.	| ❌
-|POST	| /auth/login	| تسجيل الدخول.	| ❌
-|POST	| /auth/logout	| تسجيل الخروج.	| ✅
-|GET	| /auth/profile	| عرض الملف الشخصي.	| ✅
-|POST	| /devices/register	| تسجيل جهاز للإشعارات (FCM Token).	| ✅
+|POST	| `/auth/register`	| تسجيل مستخدم جديد.	| ❌
+|POST	| `/auth/login`	| تسجيل الدخول.	| ❌
+|POST	| `/auth/logout`	| تسجيل الخروج.	| ✅
+|GET	| `/auth/profile`| عرض الملف الشخصي.	| ✅
+|POST	| `/devices/register`	| تسجيل جهاز للإشعارات (FCM Token).	| ✅
  
  
 2. الدورات والنسخ (Courses & Versioning)
