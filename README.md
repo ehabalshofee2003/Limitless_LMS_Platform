@@ -1,59 +1,170 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+🚀 Limitless LMS - Backend Documentation
+نظام إدارة تعليمية متكامل (LMS) يعتمد على معمارية متقدمة، يدعم الدفعات التعليمية، الدفع الإلكتروني، الذكاء الاصطناعي، والإشعارات الفورية.
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+🏗️ معمارية المشروع (Architecture)
+    1. Pattern: Repository & Service Layer Pattern (لضمان فصل المسؤوليات وسهولة الصيانة).
+    2. Framework: Laravel 12 (PHP 8.2+).
+    3. Database: MySQL.
+    4. Performance: Redis Caching & Queues.
+    5. Containerization: Docker Ready.
 
-## About Laravel
+🗄️ هيكل قاعدة البيانات (Database Schema)
+table        |    Description
+-----------------------------------------------------------------
+users        |  المستخدمين (طلاب، مدربين، مشرفين).
+------------------------------------------------------------------
+institutions | ملفات المؤسسات والمدربين.
+------------------------------------------------------------------
+courses	     |الدورات التعليمية (مع نظام الإصدارات Versioning).
+------------------------------------------------------------------
+cohorts      |الدفعات (تاريخ البداية والنهاية، استراتيجية فتح المحتوى).
+------------------------------------------------------------------
+lessons      |الدروس (فيديو، PDF، روابط).
+------------------------------------------------------------------
+lesson_user  |تقدم الطالب في كل درس (نسبة المشاهدة، حالة الفتح).
+------------------------------------------------------------------
+quizzes      |الاختبارات (أسئلة JSON).
+------------------------------------------------------------------
+quiz_attempts|	محاولات الطالب ودرجاته.
+------------------------------------------------------------------
+payments     |	سجل المدفوعات.
+------------------------------------------------------------------
+wallets      |أرصدة المستخدمين (مدربين وطلاب).
+------------------------------------------------------------------
+transactions |	سجل الحركات المالية (المعاملات).
+------------------------------------------------------------------
+reviews      |	تقييمات الدورات.
+------------------------------------------------------------------
+comments     |	التعليقات التشعبية (Threaded Comments).
+------------------------------------------------------------------
+notifications|	الإشعارات الداخلية.
+------------------------------------------------------------------
+fcm_tokens   |	رموز أجهزة الإشعارات (Firebase).
+------------------------------------------------------------------
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+📡 API Reference (توثيق المسارات)
+Base URL: /api/v1Auth Method: Bearer Token (Sanctum)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+1. المصادقة (Authentication)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Method	Endpoint	Description	Auth
+POST	/auth/register	تسجيل مستخدم جديد.	❌
+POST	/auth/login	تسجيل الدخول.	❌
+POST	/auth/logout	تسجيل الخروج.	✅
+GET	/auth/profile	عرض الملف الشخصي.	✅
+POST	/devices/register	تسجيل جهاز للإشعارات (FCM Token).	✅
 
-## Learning Laravel
+📤 Request Body Examples
+Register:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+{  "name": "John Doe", 
+   "email": "john@example.com",
+   "password": "password",
+   "password_confirmation": "password",
+   "role": "student"
+}
+Device Registration:
+{
+  "token": "firebase_device_token_here",
+  "device_type": "android"
+}
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+2. الدورات والنسخ (Courses & Versioning)
 
-## Laravel Sponsors
+| Method | Endpoint | Description | Role |
+| :--- | :--- | :--- | :--- |
+| GET | `/courses` | قائمة الدورات (مع بحث وفلترة). | Public |
+| GET | `/courses/{id}` | تفاصيل دورة. | Public |
+| POST | `/courses` | إنشاء دورة جديدة. | Institution |
+| PUT | `/courses/{id}` | تعديل دورة. | Institution |
+| POST | `/courses/{id}/publish` | طلب نشر دورة. | Institution |
+| POST | `/courses/{id}/new-version` | إنشاء نسخة جديدة (Versioning). | Institution |
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+/courses?search=laravel&price_min=0&price_max=100&sort=price_asc
 
-### Premium Partners
+3. الدفعات والمحتوى (Cohorts & Drip Content)
+| Method | Endpoint | Description | Role |
+| :--- | :--- | :--- | :--- |
+| POST | `/cohorts` | إنشاء دفعة جديدة. | Institution |
+| POST | `/cohorts/{id}/enroll` | التسجيل في دفعة. | Student |
+| GET | `/cohorts/{id}/lessons` | عرض دروس الدفعة (مع حالة الفتح). | Student |
+| POST | `/cohorts/{id}/unlock-strategy` | تعديل طريقة فتح المحتوى. | Institution |
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Body for Unlock Strategy:
+{
+  "strategy": "sequential", // or 'manual', 'all'
+  "watch_threshold": 80
+}
 
-## Contributing
+4. الدروس والتفاعل (Lessons & Interaction)
+| Method | Endpoint | Description | Role |
+| :--- | :--- | :--- | :--- |
+| POST | `/lessons` | إنشاء درس. | Institution |
+| POST | `/lessons/upload` | رفع ملف (فيديو/PDF). | Institution |
+| POST | `/lessons/{id}/complete` | تسجيل إكمال درس وتحديث التقدم. | Student |
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+5. الاختبارات (Quizzes)
+| Method | Endpoint | Description | Role |
+| :--- | :--- | :--- | :--- |
+| GET | `/quizzes/{id}` | عرض الأسئلة. | Student |
+| POST | `/quizzes/{id}/submit` | إرسال الإجابات. | Student |
 
-## Code of Conduct
+📝 Submit Answers
+{
+  "answers": [0, 2, 1] // Array of selected option indexes
+}
+6. المحفظة والمدفوعات (Wallet & Payments)
+| Method | Endpoint | Description | Role |
+| :--- | :--- | :--- | :--- |
+| GET | `/wallet/balance` | عرض الرصيد (متاح ومعلق). | All |
+| GET | `/wallet/transactions` | سجل المعاملات. | All |
+| POST | `/wallet/payout` | طلب سحب أرباح. | Institution |
+| POST | `/payments/checkout` | بدء عملية دفع. | Student |
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+7. التعليقات والنقاشات (Comments)
+| Method | Endpoint | Description | Auth |
+| :--- | :--- | :--- | :--- |
+| GET | `/lessons/{id}/comments` | عرض التعليقات (شجرة). | Public |
+| POST | `/comments` | إضافة تعليق أو رد. | Auth |
 
-## Security Vulnerabilities
+💬 Add Comment
+json
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+{
+  "commentable_id": 1,
+  "commentable_type": "App\\Models\\Lesson",
+  "body": "Great lesson! @admin check this.",
+  "parent_id": null // Use ID here if it's a reply
+}
+8. التقييمات (Reviews)
+| Method | Endpoint | Description | Role |
+| :--- | :--- | :--- | :--- |
+| GET | `/courses/{id}/reviews` | عرض التقييمات. | Public |
+| POST | `/courses/{id}/reviews` | إضافة تقييم. | Student |
 
-## License
+9. تشغيل الأكواد (Code Runner)
+| Method | Endpoint | Description | Role |
+| :--- | :--- | :--- | :--- |
+| POST | `/run-code` | تنفيذ كود برمجي (Python, PHP...). | Student |
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+💻 Run Code
+json
+
+{
+  "source_code": "print('Hello World')",
+  "language_id": 71 // 71 for Python, 68 for PHP
+}
+
+10. الشهادات (Certificates)
+| Method | Endpoint | Description | Role |
+| :--- | :--- | :--- | :--- |
+| GET | `/cohorts/{id}/eligibility` | التحقق من أهلية الشهادة. | Student |
+| GET | `/cohorts/{id}/certificate` | تحميل الشهادة (PDF). | Student |
+
+11. الإشعارات (Notifications)
+| Method | Endpoint | Description | Auth |
+| :--- | :--- | :--- | :--- |
+| GET | `/notifications` | قائمة الإشعارات. | ✅ |
+| POST | `/notifications/{id}/read` | تعليم كمقروء. | ✅ |
+
+
