@@ -70,7 +70,7 @@ public function store(StoreCourseRequest $request)
         ], 201);
     }
     // تحديث دورة
-public function update(UpdateCourseRequest $request, $id)
+    public function update(UpdateCourseRequest $request, $id)
     {
         $result = $this->courseService->updateCourse($request->user(), $id, $request->validated());
 

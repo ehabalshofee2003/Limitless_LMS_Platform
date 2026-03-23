@@ -12,13 +12,12 @@ use App\Http\Controllers\Api\CertificateController;
 use App\Http\Controllers\Api\InstitutionController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\WebhookController;
-use App\Http\Controllers\Api\AnalyticsController; // تأكد من وجودها
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\CodeRunnerController;
 use App\Http\Controllers\Api\WalletController;
 use App\Http\Controllers\Api\CommentController;
-
+use App\Http\Controllers\Api\AnalyticsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,56 +36,64 @@ Route::prefix('v1')->group(function () {
         Route::post('request-password-reset', [AuthController::class, 'requestPasswordReset']);
         Route::post('reset-password', [AuthController::class, 'resetPassword']);
 
-        // التحقق من الإيميل (يجب أن يكون قابلاً للوصول عبر الرابط المرسل)
+        // التحقق من الإيميل
         Route::get('/email/verify/{id}/{hash}', [VerificationController::class, 'verify'])
-            ->middleware(['signed']) // تم إزالة auth:sanctum ليتسنى فتح الرابط من الإيميل مباشرة
+            ->middleware(['signed'])
             ->name('verification.verify');
     });
 
-    // الدورات (قراءة فقط للجميع)
+    // الدورات (قراءة فقط)
     Route::get('courses', [CourseController::class, 'index']);
     Route::get('courses/{course}', [CourseController::class, 'show']);
-    Route::get('courses/{course}/reviews', [ReviewController::class, 'index']);
+    
+    // التعليقات (قراءة)
+    Route::get('lessons/{lesson}/comments', [CommentController::class, 'indexByLesson']);
+    Route::get('courses/{course}/comments', [CommentController::class, 'indexByCourse']);
 
-    // مسارات المحفظة (للجميع للاطلاع على الرصيد والمعاملات)
-    Route::prefix('wallet')->group(function () {
-        Route::get('/balance', [WalletController::class, 'balance']);
-        Route::get('/transactions', [WalletController::class, 'transactions']);
-    });
-    // routes/api.php
-
-// مسارات عامة للقراءة
-Route::get('lessons/{id}/comments', [CommentController::class, 'indexByLesson']);
-Route::get('courses/{id}/comments', [CommentController::class, 'indexByCourse']);
-
- 
-  
-    // Webhooks (للبوابك البنكية)
+    // Webhooks
     Route::post('webhooks/stripe', [WebhookController::class, 'handleStripe']);
 
     // ========== 2. المسارات المحمية (Protected Routes) ==========
     
-    Route::middleware(['auth:sanctum'])->group(function () {
+    Route::middleware('auth:sanctum')->group(function () {
 
-        // --- الملف الشخصي والتحقق (لجميع المستخدمين) ---
+        // --- المصادقة والملف الشخصي ---
         Route::prefix('auth')->group(function () {
             Route::post('logout', [AuthController::class, 'logout']);
             Route::get('profile', [AuthController::class, 'profile']);
             Route::post('change-password', [AuthController::class, 'changePassword']);
             Route::post('refresh-token', [AuthController::class, 'refreshToken']);
-            
-            // إعادة إرسال رابط التحقق
             Route::post('/email/verification-notification', [VerificationController::class, 'resend'])
                 ->middleware(['throttle:6,1']);
         });
 
-        // --- مسارات الطالب (Student) ---
-        // الشرط: يجب أن يكون إيميله محققاً ('verified')
+        // --- تسجيل الجهاز للإشعارات (FCM) ---
+        Route::post('devices/register', [AuthController::class, 'registerDevice']);
+
+        // --- المحفظة (Wallet) ---
+        Route::prefix('wallet')->group(function () {
+            Route::get('/balance', [WalletController::class, 'balance']);
+            Route::get('/transactions', [WalletController::class, 'transactions']);
+        });
+
+        // --- الإشعارات ---
+        Route::prefix('notifications')->group(function () {
+            Route::get('/', [NotificationController::class, 'index']);
+            Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
+            Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
+        });
+
+        // --- التقييمات (Reviews) ---
+        Route::post('courses/{course}/reviews', [ReviewController::class, 'store']);
+
+        // --- تشغيل الأكواد ---
+        Route::post('/run-code', [CodeRunnerController::class, 'run']);
+
+        // ========== مسارات الطلاب (Student) ==========
         Route::middleware(['role:student', 'verified'])->group(function () {
-            
             // التسجيل في الدفعات
-            Route::get('my-cohorts', [CohortController::class, 'myEnrollments']);
             Route::post('cohorts/{cohort}/enroll', [EnrollmentController::class, 'enroll']);
+            Route::get('my-cohorts', [CohortController::class, 'myEnrollments']);
             
             // الدروس والتقدم
             Route::get('cohorts/{cohort}/lessons', [LessonController::class, 'byCohort']);
@@ -103,53 +110,44 @@ Route::get('courses/{id}/comments', [CommentController::class, 'indexByCourse'])
             // المدفوعات
             Route::post('payments/checkout', [PaymentController::class, 'checkout']);
             Route::get('payments/history', [PaymentController::class, 'history']);
-            Route::post('courses/{course}/reviews', [ReviewController::class, 'store']);
-            Route::post('/run-code', [CodeRunnerController::class, 'run']);
+            
+            // التعليقات
             Route::post('comments', [CommentController::class, 'store']);
-
-
         });
 
-        // --- مسارات المدرب/المؤسسة (Instructor) ---
+        // ========== مسارات المدرب/المؤسسة (Instructor) ==========
         Route::middleware(['role:institution'])->group(function () {
-            
-            // إدارة المؤسسة
+            // المؤسسة
             Route::apiResource('institutions', InstitutionController::class)->only(['store', 'update', 'show']);
             
-            // إدارة الدورات
+            // الدورات
             Route::apiResource('courses', CourseController::class)->only(['store', 'update', 'destroy']);
             Route::post('courses/{course}/publish', [CourseController::class, 'publish']);
+            Route::post('courses/{course}/new-version', [CourseController::class, 'createVersion']); // نظام الإصدارات
             
-            // إدارة الدفعات
+            // الدفعات
             Route::apiResource('cohorts', CohortController::class)->only(['store', 'update']);
+            Route::post('cohorts/{cohort}/unlock-strategy', [CohortController::class, 'updateUnlockStrategy']); // نظام Drip
+            Route::post('cohorts/{cohort}/manual-unlock', [CohortController::class, 'manualUnlockLesson']); // فتح يدوي
             Route::get('cohorts/{cohort}/students', [CohortController::class, 'getStudents']);
             
-            // إدارة الدروس
+            // الدروس
             Route::apiResource('lessons', LessonController::class)->only(['store', 'update', 'destroy']);
-            
-            // إدارة الاختبارات
-            Route::post('quizzes', [QuizController::class, 'store']); // أضفناها للتبسيط
-            // داخل مجموعة role:institution
             Route::post('lessons/upload', [LessonController::class, 'uploadResource']);
+            
+            // الاختبارات
+            Route::post('quizzes', [QuizController::class, 'store']);
+            
+            // المحفظة والسحب
             Route::post('/wallet/payout', [WalletController::class, 'requestPayout']);
             Route::get('/wallet/payouts', [WalletController::class, 'payoutHistory']);
-            Route::post('comments', [CommentController::class, 'store']);
-
- 
         });
 
-        // --- مسارات المشرف (Admin) ---
+        // ========== مسارات المشرف (Admin) ==========
         Route::middleware(['role:super_admin'])->group(function () {
             Route::get('admin/analytics/dashboard', [AnalyticsController::class, 'dashboard']);
+            Route::get('admin/analytics/revenue', [AnalyticsController::class, 'revenue']);
             Route::post('admin/institutions/{id}/approve', [InstitutionController::class, 'approve']);
         });
-
     });
-    
-});
-// داخل مجموعة auth:sanctum
-Route::prefix('notifications')->group(function () {
-    Route::get('/', [NotificationController::class, 'index']);
-    Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
-    Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
 });

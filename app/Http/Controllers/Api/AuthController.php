@@ -19,6 +19,7 @@
  */
 namespace App\Http\Controllers\Api;
 
+use App\Models\FcmToken;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Http\Resources\UserResource;
@@ -224,6 +225,26 @@ class AuthController extends Controller
             'access_token' => $newToken,
             'token_type' => 'Bearer',
         ]);
+    }
+    // في Controller جديد أو AuthController
+
+    public function registerDevice(Request $request)
+    {
+        $request->validate([
+            'token' => 'required|string',
+            'device_type' => 'nullable|string' // android, ios
+        ]);
+
+        // حفظ أو تحديث التوكن للمستخدم الحالي
+        FcmToken::updateOrCreate(
+            ['token' => $request->token],
+            [
+                'user_id' => auth()->id(),
+                'device_type' => $request->device_type
+            ]
+        );
+
+        return response()->json(['message' => 'Device registered successfully.']);
     }
 }
  

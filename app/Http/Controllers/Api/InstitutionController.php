@@ -5,11 +5,16 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Institution;
 use App\Models\Payout;
+use App\Models\Lesson;
+use App\Models\Cohort;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\StoreInstitutionRequest;
 use App\Http\Requests\UpdateInstitutionRequest;
 use App\Services\InstitutionService;
+use App\Repositories\LessonRepository;
+use App\Services\DripContentService;
 
 class InstitutionController extends Controller
 {
@@ -82,7 +87,7 @@ class InstitutionController extends Controller
         // منطق الرفض (مثلاً إرسال إشعار أو حذف)
         return response()->json(['message' => 'Institution rejected.']);
     }   
-        public function requestPayout(Request $request)
+    public function requestPayout(Request $request)
     {
         $request->validate(['amount' => 'required|numeric|min:10']);
         
@@ -107,5 +112,28 @@ class InstitutionController extends Controller
         $wallet->save();
 
         return response()->json(['message' => 'Payout request submitted.', 'data' => $payout]);
+    }
+    // في CourseController أو InstructorController
+    public function updateUnlockStrategy(Request $request, $cohortId)
+    {
+        $cohort = Cohort::findOrFail($cohortId);
+        // تحقق من الملكية...
+
+        $request->validate(['strategy' => 'required|in:sequential,manual,all']);
+        $cohort->update(['content_unlock_strategy' => $request->strategy]);
+
+        return response()->json(['message' => 'Unlock strategy updated.']);
+    }
+    public function unlockLessonForStudent(Request $request, $studentId, $lessonId)
+    {
+        $lesson = Lesson::findOrFail($lessonId);
+        $user = User::findOrFail($studentId);
+        
+        // تحقق من أن المدرب يملك الدورة...
+        
+        $dripService = new DripContentService(app(LessonRepository::class));
+        $dripService->manualUnlock($user, $lesson);
+
+        return response()->json(['message' => 'Lesson unlocked for student.']);
     }
 }

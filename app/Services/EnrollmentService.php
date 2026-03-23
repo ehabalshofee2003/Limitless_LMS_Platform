@@ -3,19 +3,27 @@
 namespace App\Services;
 
 use App\Repositories\CohortRepository;
-use App\Models\User;
-use App\Models\Cohort;
+use App\Repositories\CourseRepository;
+use App\Services\DripContentService; // <--- استيراد الخدمة
 use App\Notifications\UserEnrolledNotification;
 use App\Notifications\NewStudentEnrolledNotification;
+use App\Models\User;
 
 class EnrollmentService
 {
     protected $cohortRepo;
+    protected $courseRepo;
+    protected $dripService; // <--- تعريف الخاصية
 
-    // حقن الـ Repository عبر الـ Constructor (Dependency Injection)
-    public function __construct(CohortRepository $cohortRepo)
-    {
+    // حقن الخدمات في البناء
+    public function __construct(
+        CohortRepository $cohortRepo, 
+        CourseRepository $courseRepo,
+        DripContentService $dripService // <--- حقن الخدمة هنا
+    ) {
         $this->cohortRepo = $cohortRepo;
+        $this->courseRepo = $courseRepo;
+        $this->dripService = $dripService;
     }
 
     public function enroll(User $user, $cohortId)
@@ -32,7 +40,7 @@ class EnrollmentService
             return ['error' => 'Course not available', 'code' => 403];
         }
 
-        // 3. قواعد العمل: هل مسجل مسبقاً؟ (نستخدم الـ Repository للسؤال)
+        // 3. قواعد العمل: هل مسجل مسبقاً؟
         if ($this->cohortRepo->isUserEnrolled($user->id, $cohort->id)) {
             return ['error' => 'Already enrolled', 'code' => 409];
         }
@@ -43,36 +51,25 @@ class EnrollmentService
             return ['error' => 'Cohort is full', 'code' => 400];
         }
    
-        // 5. تنفيذ التسجيل (نستخدم الـ Repository للتنفيذ)
-        $this->cohortRepo->enrollUser($cohort,$user);
+        // 5. تنفيذ التسجيل
+        $this->cohortRepo->enrollUser($cohort, $user);
 
-        // 6. يمكن إضافة المزيد من المنطق هنا: إرسال إيميل، إشعار، إلخ
-        // Mail::to($user)->send(...);
+        // 6. (جديد) فتح الدرس الأول تلقائياً باستخدام الخدمة المحقونة
+        $this->dripService->unlockFirstLesson($user, $cohort);
+
+        // 7. إرسال الإشعارات
+        // إشعار للطالب
         $user->notify(new UserEnrolledNotification($cohort));
-       // 1. جلب مالك الدورة (Instructor)
-        $instructor = $cohort->course->institution->user;
         
-        // 2. إرسال الإشعار للمدرب
+        // إشعار للمدرب
+        $instructor = $cohort->course->institution->user;
         if ($instructor) {
             $instructor->notify(new NewStudentEnrolledNotification(
-                $user->name, // اسم الطالب
-                $cohort->course->title // اسم الدورة
+                $user->name,
+                $cohort->course->title
             ));
         }
+
         return ['success' => true, 'message' => 'Enrollment successful.'];
-
-     }
-        
-    public function enrollStudent(User $user, $cohortId)
-    {
-        // ... المنطق القديم (التحقق والتسجيل) ...
-        
-        // بعد نجاح التسجيل:
-        // $this->cohortRepo->enrollUser($cohort, $user);
-
-        // ====> إرسال الإشعار <====
-        // المتغير $user هو المستقبل، نستدعي notify ونعطيه كلاس الإشعار
-       
     }
 }
- 

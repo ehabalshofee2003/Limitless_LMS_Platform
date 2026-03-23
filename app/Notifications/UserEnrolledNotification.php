@@ -3,58 +3,48 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use App\Notifications\Channels\FirebaseChannel;
+use Kreait\Firebase\Messaging\CloudMessage;
+use Kreait\Firebase\Messaging\Notification as FcmNotification;
 
-// نطبق ShouldQueue لجعل الإرسال في الخلفية (أفضل للأداء)
 class UserEnrolledNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
     protected $cohort;
 
-    // نستقبل بيانات الدفعة عند إنشاء الإشعار
     public function __construct($cohort)
     {
         $this->cohort = $cohort;
     }
 
-    /**
-     * تحديد قنوات الإرسال.
-     * نستخدم ['database', 'mail'] ليعني:
-     * 1. احفظ نسخة في قاعدة البيانات (ليشاهدها في الموقع).
-     * 2. أرسل نسخة للإيميل.
-     */
-    public function via(object $notifiable): array
+    // تحديد القنوات: Database + Firebase
+    public function via($notifiable)
     {
-        return ['database', 'mail'];
+        return ['database', FirebaseChannel::class];
     }
 
-    /**
-     * تمثيل الإشعار عندما يُقرأ من قاعدة البيانات (JSON).
-     * هذا هو الشكل الذي سيراه الـ Frontend.
-     */
-    public function toArray(object $notifiable): array
+    // بيانات قاعدة البيانات (كما كانت)
+    public function toArray($notifiable)
     {
         return [
             'title' => 'New Enrollment',
             'message' => "You have been successfully enrolled in cohort: " . $this->cohort->name,
             'cohort_id' => $this->cohort->id,
-            'icon' => '✅', // يمكن استخدام أيقونات أو روابط
         ];
     }
 
-    /**
-     * تمثيل الإشعار عندما يُرسل كإيميل.
-     */
-    public function toMail(object $notifiable): MailMessage
+    // (جديد) بيانات Firebase
+    public function toFirebase($notifiable)
     {
-        return (new MailMessage)
-                    ->subject('Enrollment Confirmation')
-                    ->greeting('Hello ' . $notifiable->name . '!')
-                    ->line('You have been successfully enrolled in: ' . $this->cohort->name)
-                    ->action('View Course', url('/courses/' . $this->cohort->course_id))
-                    ->line('Thank you for using our application!');
+        return CloudMessage::new()
+            ->withNotification(FcmNotification::create('Enrollment Confirmed', "You joined " . $this->cohort->name))
+            ->withData([
+                'cohort_id' => (string) $this->cohort->id,
+                'type' => 'enrollment',
+                'click_action' => 'OPEN_COURSE' // للأندرويد
+            ]);
     }
 }

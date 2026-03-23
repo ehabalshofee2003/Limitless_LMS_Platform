@@ -21,4 +21,8 @@ class CommentRepository
             ->latest()
             ->get();
     }
+      public function find($id)
+    {
+        return Comment::find($id);
+    }
 }
