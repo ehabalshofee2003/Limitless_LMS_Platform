@@ -1,7 +1,9 @@
 🚀 Limitless LMS - Backend Documentation
+
 نظام إدارة تعليمية متكامل (LMS) يعتمد على معمارية متقدمة، يدعم الدفعات التعليمية، الدفع الإلكتروني، الذكاء الاصطناعي، والإشعارات الفورية.
 
 🏗️ معمارية المشروع (Architecture)
+
     1. Pattern: Repository & Service Layer Pattern (لضمان فصل المسؤوليات وسهولة الصيانة).
     2. Framework: Laravel 12 (PHP 8.2+).
     3. Database: MySQL.
@@ -9,6 +11,8 @@
     5. Containerization: Docker Ready.
 
 🗄️ هيكل قاعدة البيانات (Database Schema)
+
+
 table        |    Description
 -----------------------------------------------------------------
 users        |  المستخدمين (طلاب، مدربين، مشرفين).
@@ -43,6 +47,7 @@ fcm_tokens   |	رموز أجهزة الإشعارات (Firebase).
 ------------------------------------------------------------------
 
 📡 API Reference (توثيق المسارات)
+
 Base URL: /api/v1Auth Method: Bearer Token (Sanctum)
 
 1. المصادقة (Authentication)
@@ -53,22 +58,8 @@ POST	/auth/login	تسجيل الدخول.	❌
 POST	/auth/logout	تسجيل الخروج.	✅
 GET	/auth/profile	عرض الملف الشخصي.	✅
 POST	/devices/register	تسجيل جهاز للإشعارات (FCM Token).	✅
-
-📤 Request Body Examples
-Register:
-
-{  "name": "John Doe", 
-   "email": "john@example.com",
-   "password": "password",
-   "password_confirmation": "password",
-   "role": "student"
-}
-Device Registration:
-{
-  "token": "firebase_device_token_here",
-  "device_type": "android"
-}
-
+ 
+ 
 2. الدورات والنسخ (Courses & Versioning)
 
 | Method | Endpoint | Description | Role |
@@ -83,6 +74,7 @@ Device Registration:
 /courses?search=laravel&price_min=0&price_max=100&sort=price_asc
 
 3. الدفعات والمحتوى (Cohorts & Drip Content)
+
 | Method | Endpoint | Description | Role |
 | :--- | :--- | :--- | :--- |
 | POST | `/cohorts` | إنشاء دفعة جديدة. | Institution |
@@ -90,13 +82,9 @@ Device Registration:
 | GET | `/cohorts/{id}/lessons` | عرض دروس الدفعة (مع حالة الفتح). | Student |
 | POST | `/cohorts/{id}/unlock-strategy` | تعديل طريقة فتح المحتوى. | Institution |
 
-Body for Unlock Strategy:
-{
-  "strategy": "sequential", // or 'manual', 'all'
-  "watch_threshold": 80
-}
 
 4. الدروس والتفاعل (Lessons & Interaction)
+
 | Method | Endpoint | Description | Role |
 | :--- | :--- | :--- | :--- |
 | POST | `/lessons` | إنشاء درس. | Institution |
@@ -104,16 +92,14 @@ Body for Unlock Strategy:
 | POST | `/lessons/{id}/complete` | تسجيل إكمال درس وتحديث التقدم. | Student |
 
 5. الاختبارات (Quizzes)
+
 | Method | Endpoint | Description | Role |
 | :--- | :--- | :--- | :--- |
 | GET | `/quizzes/{id}` | عرض الأسئلة. | Student |
 | POST | `/quizzes/{id}/submit` | إرسال الإجابات. | Student |
 
-📝 Submit Answers
-{
-  "answers": [0, 2, 1] // Array of selected option indexes
-}
 6. المحفظة والمدفوعات (Wallet & Payments)
+
 | Method | Endpoint | Description | Role |
 | :--- | :--- | :--- | :--- |
 | GET | `/wallet/balance` | عرض الرصيد (متاح ومعلق). | All |
@@ -122,46 +108,35 @@ Body for Unlock Strategy:
 | POST | `/payments/checkout` | بدء عملية دفع. | Student |
 
 7. التعليقات والنقاشات (Comments)
+
 | Method | Endpoint | Description | Auth |
 | :--- | :--- | :--- | :--- |
 | GET | `/lessons/{id}/comments` | عرض التعليقات (شجرة). | Public |
 | POST | `/comments` | إضافة تعليق أو رد. | Auth |
 
-💬 Add Comment
-json
-
-{
-  "commentable_id": 1,
-  "commentable_type": "App\\Models\\Lesson",
-  "body": "Great lesson! @admin check this.",
-  "parent_id": null // Use ID here if it's a reply
-}
 8. التقييمات (Reviews)
+
 | Method | Endpoint | Description | Role |
 | :--- | :--- | :--- | :--- |
 | GET | `/courses/{id}/reviews` | عرض التقييمات. | Public |
 | POST | `/courses/{id}/reviews` | إضافة تقييم. | Student |
 
 9. تشغيل الأكواد (Code Runner)
+
 | Method | Endpoint | Description | Role |
 | :--- | :--- | :--- | :--- |
 | POST | `/run-code` | تنفيذ كود برمجي (Python, PHP...). | Student |
-
-💻 Run Code
-json
-
-{
-  "source_code": "print('Hello World')",
-  "language_id": 71 // 71 for Python, 68 for PHP
-}
+ 
 
 10. الشهادات (Certificates)
+
 | Method | Endpoint | Description | Role |
 | :--- | :--- | :--- | :--- |
 | GET | `/cohorts/{id}/eligibility` | التحقق من أهلية الشهادة. | Student |
 | GET | `/cohorts/{id}/certificate` | تحميل الشهادة (PDF). | Student |
 
 11. الإشعارات (Notifications)
+
 | Method | Endpoint | Description | Auth |
 | :--- | :--- | :--- | :--- |
 | GET | `/notifications` | قائمة الإشعارات. | ✅ |
