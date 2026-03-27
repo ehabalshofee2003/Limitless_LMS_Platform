@@ -1,131 +1,127 @@
-🚀 Limitless LMS - Backend Documentation
+# 🚀 Limitless LMS
 
-نظام إدارة تعليمية متكامل (LMS) يعتمد على معمارية متقدمة، يدعم الدفعات التعليمية، الدفع الإلكتروني، الذكاء الاصطناعي، والإشعارات الفورية.
+A scalable and production-ready Learning Management System (LMS) backend built with Laravel.  
+Designed to simulate real-world educational platforms with advanced features like cohort-based learning, payments, AI-powered tools, and real-time notifications.
 
-🏗️ معمارية المشروع (Architecture)
+---
 
-    1. Pattern: Repository & Service Layer Pattern (لضمان فصل المسؤوليات وسهولة الصيانة).
-    2. Framework: Laravel 12 (PHP 8.2+).
-    3. Database: MySQL.
-    4. Performance: Redis Caching & Queues.
-    5. Containerization: Docker Ready.
+## 🔥 Key Features
 
-🗄️ هيكل قاعدة البيانات (Database Schema)
+- 👥 Multi-role system (Student / Instructor / Admin)
+- 🎓 Cohort-based learning with Drip Content strategy
+- 💳 Payment & Wallet system (transactions, payouts)
+- 🤖 AI-powered lesson assistant
+- 🔔 Real-time notifications (Firebase FCM)
+- 🧠 Quiz system with attempts tracking
+- 💬 Threaded comments & reviews system
+- 🧾 Certificate generation (PDF)
+- ⚡ Code execution system (Code Runner)
 
+---
 
-|table        |    Description
-| :--- | :--- | 
-|users        |  المستخدمين (طلاب، مدربين، مشرفين).
-|institutions | ملفات المؤسسات والمدربين.
-|courses	  |الدورات التعليمية (مع نظام الإصدارات Versioning).
-|cohorts      |الدفعات (تاريخ البداية والنهاية، استراتيجية فتح المحتوى).
-|lessons      |الدروس (فيديو، PDF، روابط).
-|lesson_user  |تقدم الطالب في كل درس (نسبة المشاهدة، حالة الفتح).
-|quizzes      |الاختبارات (أسئلة JSON).
-|quiz_attempts|	محاولات الطالب ودرجاته.
-|payments     |	سجل المدفوعات.
-|wallets      |أرصدة المستخدمين (مدربين وطلاب).
-|transactions |	سجل الحركات المالية (المعاملات).
-|reviews      |	تقييمات الدورات.
-|comments     |	التعليقات التشعبية (Threaded Comments).
-|notifications|	الإشعارات الداخلية.
-|fcm_tokens   |	رموز أجهزة الإشعارات (Firebase).
+## 🏗️ Architecture
 
-📡 API Reference (توثيق المسارات)
+This project follows a clean and scalable architecture:
 
-Base URL: /api/v1Auth Method: Bearer Token (Sanctum)
+- **Pattern:** Repository & Service Layer Pattern  
+- **Framework:** Laravel 12 (PHP 8.2+)  
+- **Database:** MySQL  
+- **Caching & Queues:** Redis  
+- **Containerization:** Docker-ready  
 
-1. المصادقة (Authentication)
+### 🎯 Design Goals
+- Separation of concerns  
+- Scalability & maintainability  
+- Production-ready structure  
 
-|Method	| Endpoint	| Description	| Auth
-| :--- | :--- | :--- | :--- |
-|POST	| `/auth/register`	| تسجيل مستخدم جديد.	| ❌
-|POST	| `/auth/login`	| تسجيل الدخول.	| ❌
-|POST	| `/auth/logout`	| تسجيل الخروج.	| ✅
-|GET	| `/auth/profile`| عرض الملف الشخصي.	| ✅
-|POST	| `/devices/register`	| تسجيل جهاز للإشعارات (FCM Token).	| ✅
- 
- 
-2. الدورات والنسخ (Courses & Versioning)
+---
 
-| Method | Endpoint | Description | Role |
-| :--- | :--- | :--- | :--- |
-| GET | `/courses` | قائمة الدورات (مع بحث وفلترة). | Public |
-| GET | `/courses/{id}` | تفاصيل دورة. | Public |
-| POST | `/courses` | إنشاء دورة جديدة. | Institution |
-| PUT | `/courses/{id}` | تعديل دورة. | Institution |
-| POST | `/courses/{id}/publish` | طلب نشر دورة. | Institution |
-| POST | `/courses/{id}/new-version` | إنشاء نسخة جديدة (Versioning). | Institution |
+## 🗄️ Database Schema (Overview)
 
-/courses?search=laravel&price_min=0&price_max=100&sort=price_asc
+| Table         | Description |
+|--------------|------------|
+| users        | Users (طلاب، مدربين، مشرفين) |
+| institutions | Institutions & instructors |
+| courses      | Courses with versioning system |
+| cohorts      | Cohort-based enrollment |
+| lessons      | Lessons (video, PDF, links) |
+| lesson_user  | User progress tracking |
+| quizzes      | Quiz system (JSON-based) |
+| quiz_attempts| Attempts & scores |
+| payments     | Payment records |
+| wallets      | User balances |
+| transactions | Financial transactions |
+| reviews      | Course reviews |
+| comments     | Threaded discussions |
+| notifications| Internal notifications |
+| fcm_tokens   | Device tokens for push notifications |
 
-3. الدفعات والمحتوى (Cohorts & Drip Content)
+---
 
-| Method | Endpoint | Description | Role |
-| :--- | :--- | :--- | :--- |
-| POST | `/cohorts` | إنشاء دفعة جديدة. | Institution |
-| POST | `/cohorts/{id}/enroll` | التسجيل في دفعة. | Student |
-| GET | `/cohorts/{id}/lessons` | عرض دروس الدفعة (مع حالة الفتح). | Student |
-| POST | `/cohorts/{id}/unlock-strategy` | تعديل طريقة فتح المحتوى. | Institution |
+## 📡 API Overview
 
+Base URL:
 
-4. الدروس والتفاعل (Lessons & Interaction)
+Authentication:
 
-| Method | Endpoint | Description | Role |
-| :--- | :--- | :--- | :--- |
-| POST | `/lessons` | إنشاء درس. | Institution |
-| POST | `/lessons/upload` | رفع ملف (فيديو/PDF). | Institution |
-| POST | `/lessons/{id}/complete` | تسجيل إكمال درس وتحديث التقدم. | Student |
+### Example Endpoints
 
-5. الاختبارات (Quizzes)
+| Method | Endpoint |
+|-------|--------|
+| POST | `/auth/login` |
+| GET  | `/courses` |
+| POST | `/courses` |
+| GET  | `/cohorts/{id}/lessons` |
+| POST | `/quizzes/{id}/submit` |
 
-| Method | Endpoint | Description | Role |
-| :--- | :--- | :--- | :--- |
-| GET | `/quizzes/{id}` | عرض الأسئلة. | Student |
-| POST | `/quizzes/{id}/submit` | إرسال الإجابات. | Student |
+👉 Full API Documentation available inside the project.
 
-6. المحفظة والمدفوعات (Wallet & Payments)
+---
 
-| Method | Endpoint | Description | Role |
-| :--- | :--- | :--- | :--- |
-| GET | `/wallet/balance` | عرض الرصيد (متاح ومعلق). | All |
-| GET | `/wallet/transactions` | سجل المعاملات. | All |
-| POST | `/wallet/payout` | طلب سحب أرباح. | Institution |
-| POST | `/payments/checkout` | بدء عملية دفع. | Student |
+## ⚙️ Installation
 
-7. التعليقات والنقاشات (Comments)
+```bash
+git clone https://github.com/ehabalshofee2003/limitless-lms.git
+cd limitless-lms
 
-| Method | Endpoint | Description | Auth |
-| :--- | :--- | :--- | :--- |
-| GET | `/lessons/{id}/comments` | عرض التعليقات (شجرة). | Public |
-| POST | `/comments` | إضافة تعليق أو رد. | Auth |
+composer install
+cp .env.example .env
+php artisan key:generate
 
-8. التقييمات (Reviews)
+# Configure database inside .env
 
-| Method | Endpoint | Description | Role |
-| :--- | :--- | :--- | :--- |
-| GET | `/courses/{id}/reviews` | عرض التقييمات. | Public |
-| POST | `/courses/{id}/reviews` | إضافة تقييم. | Student |
+php artisan migrate
+php artisan serve
+```
+🐳 Docker Support
 
-9. تشغيل الأكواد (Code Runner)
+docker compose up -d
 
-| Method | Endpoint | Description | Role |
-| :--- | :--- | :--- | :--- |
-| POST | `/run-code` | تنفيذ كود برمجي (Python, PHP...). | Student |
- 
+🔐 Security
 
-10. الشهادات (Certificates)
+Authentication via Laravel Sanctum
+- Sensitive data managed through .env
+- Token-based API access
+- Secure payment handling
 
-| Method | Endpoint | Description | Role |
-| :--- | :--- | :--- | :--- |
-| GET | `/cohorts/{id}/eligibility` | التحقق من أهلية الشهادة. | Student |
-| GET | `/cohorts/{id}/certificate` | تحميل الشهادة (PDF). | Student |
+💡 Why this Project?
+This project was built to simulate a real-world LMS backend system with:
+- Complex business logic
+- Scalable architecture
+- Real production scenarios (payments, cohorts, notifications)
+It reflects my ability to design and build backend systems beyond CRUD applications.
 
-11. الإشعارات (Notifications)
+🚀 Future Improvements
+- GraphQL support
+- Advanced analytics dashboard
+- Microservices architecture
+- AI recommendation engine
 
-| Method | Endpoint | Description | Auth |
-| :--- | :--- | :--- | :--- |
-| GET | `/notifications` | قائمة الإشعارات. | ✅ |
-| POST | `/notifications/{id}/read` | تعليم كمقروء. | ✅ |
+👨‍💻 Author
+Ehab
+Backend Developer (Laravel)
 
+GitHub: https://github.com/ehabalshofee2003
 
+📄 License
+This project is licensed under the MIT License.
