@@ -2,9 +2,13 @@
 
 A scalable, production-oriented backend system for an e-learning platform built with **Laravel 12 (PHP 8.2+)** and **MySQL**.
 The project follows a clean architecture using the **Repository & Service Layer pattern**, designed to simulate real-world SaaS backend systems.
+
 ![PHP](https://img.shields.io/badge/PHP-8.2-777BB4?logo=php&logoColor=white)
+
 ![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)
+
 ![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)
+
 ---
 
 # 📌 Overview
